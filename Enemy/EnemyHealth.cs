@@ -9,12 +9,15 @@ namespace CompleteProject
         public float sinkSpeed = 2.5f;              // The speed at which the enemy sinks through the floor when dead.
         public int scoreValue = 10;                 // The amount added to the player's score when the enemy dies.
         public AudioClip deathClip;                 // The sound to play when the enemy dies.
+        public GameObject pickUp;
 
-
-        //Animator anim;                              // Reference to the animator.
+        GameObject hitmarker;
+        
         AudioSource enemyAudio;                     // Reference to the audio source.
         ParticleSystem hitParticles;                // Reference to the particle system that plays when the enemy is damaged.
         BoxCollider capsuleCollider;            // Reference to the capsule collider.
+        float effectsDisplayTime = 0.1f;
+        float timer;
         bool isDead;                                // Whether the enemy is dead.
         bool isSinking;                             // Whether the enemy has started sinking through the floor.
 
@@ -22,7 +25,7 @@ namespace CompleteProject
         void Awake ()
         {
             // Setting up the references.
-            //anim = GetComponent <Animator> ();
+            hitmarker = this.transform.Find("Hitmarker").gameObject;
             enemyAudio = GetComponent <AudioSource> ();
             hitParticles = GetComponentInChildren <ParticleSystem> ();
             capsuleCollider = GetComponent <BoxCollider> ();
@@ -34,33 +37,44 @@ namespace CompleteProject
 
         void Update ()
         {
+            timer += Time.deltaTime;
+
             // If the enemy should be sinking...
-            if(isSinking)
+            if (isSinking)
             {
                 // ... move the enemy down by the sinkSpeed per second.
                 transform.Translate (-Vector3.up * sinkSpeed * Time.deltaTime);
             }
+
+            if (timer >= effectsDisplayTime)
+            {
+                // ... disable the effects.
+                DisableEffects();
+            }
+        }
+
+        public void DisableEffects()
+        {
+            hitmarker.SetActive(false);
         }
 
 
         public void TakeDamage (int amount)
         {
+            timer = 0f;
+
             // If the enemy is dead...
-            if(isDead)
+            if (isDead)
                 // ... no need to take damage so exit the function.
                 return;
+
+            hitmarker.SetActive(true);
 
             // Play the hurt sound effect.
             enemyAudio.Play ();
 
             // Reduce the current health by the amount of damage sustained.
             currentHealth -= amount;
-            
-            // Set the position of the particle system to where the hit was sustained.
-            //hitParticles.transform.position = hitPoint;
-
-            // And play the particles.
-            //hitParticles.Play();
 
             // If the current health is less than or equal to zero...
             if(currentHealth <= 0)
@@ -79,12 +93,14 @@ namespace CompleteProject
             // Turn the collider into a trigger so shots can pass through it.
             capsuleCollider.isTrigger = true;
 
-            // Tell the animator that the enemy is dead.
-            //anim.SetTrigger ("Dead");
-
             // Change the audio clip of the audio source to the death clip and play it (this will stop the hurt clip playing).
-            //enemyAudio.clip = deathClip;
+            enemyAudio.clip = deathClip;
             enemyAudio.Play ();
+
+            if (Random.Range(1, 11) > 7)
+            {
+                Instantiate(pickUp, transform.position, transform.rotation);
+            }
 
             StartSinking();
         }

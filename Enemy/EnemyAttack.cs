@@ -7,15 +7,15 @@ namespace CompleteProject
     {
         public float timeBetweenAttacks = 0.5f;     // The time in seconds between each attack.
         public int attackDamage = 10;               // The amount of health taken away per attack.
-
-
-        //Animator anim;                              // Reference to the animator component.
+        
         GameObject player;                          // Reference to the player GameObject.
         GameObject bullet;
         PlayerHealth playerHealth;                  // Reference to the player's health.
         EnemyHealth enemyHealth;                    // Reference to this enemy's health.
         PlayerShoot playerShoot;
+        HitDetection hitDetection;
         bool playerInRange;                         // Whether player is within the trigger collider and can be attacked.
+        bool enemyHit;
         float timer;                                // Timer for counting up to the next attack.
         int dmg;
 
@@ -26,10 +26,9 @@ namespace CompleteProject
             player = GameObject.FindGameObjectWithTag ("Player");
             bullet = GameObject.FindGameObjectWithTag("Bullet");
             playerHealth = player.GetComponent <PlayerHealth> ();
+            playerShoot = player.GetComponent<PlayerShoot>();
             enemyHealth = GetComponent<EnemyHealth>();
-            print(playerShoot.damagePerShot);
             dmg = playerShoot.damagePerShot;
-            //anim = GetComponent <Animator> ();
         }
 
 
@@ -40,10 +39,6 @@ namespace CompleteProject
             {
                 // ... the player is in range.
                 playerInRange = true;
-            }
-            if (other.gameObject == bullet)
-            {
-                Hit();
             }
         }
 
@@ -58,6 +53,14 @@ namespace CompleteProject
             }
         }
 
+        void OnCollisionEnter(Collision col)
+        {
+            if (col.gameObject.name == "Bullet(Clone)")
+            {
+                enemyHit = true;
+                Destroy(col.gameObject);
+            }
+        }
 
         void Update ()
         {
@@ -71,19 +74,19 @@ namespace CompleteProject
                 Attack ();
             }
 
-            // If the player has zero or less health...
-            if(playerHealth.currentHealth <= 0)
+            if (enemyHit && enemyHealth.currentHealth > 0)
             {
-                // ... tell the animator the player is dead.
-                //anim.SetTrigger ("PlayerDead");
+                Hit();
             }
         }
 
         void Hit()
         {
-            enemyHealth.TakeDamage(dmg);
-
-            Destroy(bullet);
+            if (enemyHealth.currentHealth > 0)
+            {
+                enemyHealth.TakeDamage(dmg);
+                enemyHit = false;
+            }
         }
 
         void Attack ()
